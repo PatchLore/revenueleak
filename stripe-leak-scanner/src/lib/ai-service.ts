@@ -1,65 +1,82 @@
-import OpenAI from 'openai';
+import { DEMO_MODE } from '@/config/mode';
 import { LeakAnalysis, AIReport } from '@/types';
 import type { LeakReport } from './leakEngine';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// DEMO_MODE toggle allows swapping between stubbed logic and real integrations later.
 
 export async function generateAIReport(analysis: LeakAnalysis): Promise<AIReport> {
-  const prompt = `Act as a Revenue Operations Consultant for SaaS companies. Analyze this Stripe data and provide actionable intelligence.
+  if (DEMO_MODE) {
+    const urgencyLevel = calculateUrgencyLevel(analysis);
 
-FINANCIAL DATA:
-- Failed Payment Recovery Opportunity: $${analysis.failedPaymentRecovery.recoverableAmount.toFixed(2)}/month
-- Churn Rate: ${analysis.churnLeak.monthlyRate.toFixed(1)}% ($${analysis.churnLeak.revenueLost.toFixed(2)}/month lost)
-- Discount Leak: ${analysis.discountLeak.percentageOfRevenue.toFixed(1)}% of revenue
-- Annual Conversion Opportunity: $${analysis.annualConversion.conversionOpportunity.toFixed(2)}
-- Dunning Score: ${analysis.dunningEfficiency.score}/100
-- Total Recoverable Revenue: $${analysis.totalRecoverable.toFixed(2)}/year
+    const executiveSummary = `You have an estimated $${analysis.totalRecoverable.toFixed(
+      0
+    )}/year in recoverable revenue, driven mainly by ${
+      analysis.failedPaymentRecovery.severity === 'High'
+        ? 'failed payments'
+        : analysis.churnLeak.severity === 'High'
+        ? 'high churn'
+        : 'discount leaks'
+    }.`;
 
-Provide JSON response:
-{
-  "executiveSummary": "2-3 sentences on overall financial health",
-  "topLeaks": [
-    {"title": "Leak name", "impact": "$X/month impact", "action": "Specific fix"}
-  ],
-  "totalRecoverable": "Formatted string with total",
-  "actionPlan": ["30-day action item 1", "action item 2", "action item 3"],
-  "urgencyLevel": "Critical|High|Medium|Low"
+    const topLeaks = [
+      {
+        title: 'Failed payment recovery',
+        impact: `$${analysis.failedPaymentRecovery.recoverableAmount.toFixed(0)}/month`,
+        action: 'Tighten dunning and retry logic for failed payments over the next 14 days.',
+      },
+      {
+        title: 'Churn management',
+        impact: `$${analysis.churnLeak.potentialSavings.toFixed(0)}/month`,
+        action:
+          'Introduce a save offer and exit survey for customers cancelling in their first 90 days.',
+      },
+    ];
+
+    const actionPlan = [
+      'Audit failed payments from the last 30 days and add at least one additional retry step.',
+      'Email recently cancelled customers to understand top 2–3 reasons for churn.',
+      'Review active coupons and remove or tighten those with poor ROI.',
+    ];
+
+    return {
+      executiveSummary,
+      topLeaks,
+      totalRecoverable: `$${analysis.totalRecoverable.toFixed(2)}/year`,
+      actionPlan,
+      urgencyLevel,
+    };
+  }
+
+  // Real OpenAI-backed implementation can be wired here later.
+  // For now, fall back to the same deterministic summary used in demo mode.
+  const urgencyLevel = calculateUrgencyLevel(analysis);
+  const executiveSummary = `You have an estimated $${analysis.totalRecoverable.toFixed(
+    0
+  )}/year in recoverable revenue.`;
+
+  return {
+    executiveSummary,
+    topLeaks: [],
+    totalRecoverable: `$${analysis.totalRecoverable.toFixed(2)}/year`,
+    actionPlan: [],
+    urgencyLevel,
+  };
 }
 
-Rules:
-- Focus only on financial impact
-- Prioritize by ROI
-- Be direct, no fluff
-- Specific dollar amounts`;
-
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4-turbo-preview',
-    messages: [{ role: 'system', content: prompt }],
-    response_format: { type: 'json_object' },
-    temperature: 0.3,
-  });
-
-  return JSON.parse(completion.choices[0].message.content!) as AIReport;
-}
-
-// Generate executive summary for dashboard
 export async function generateExecutiveSummary(analysis: LeakAnalysis): Promise<string> {
-  const prompt = `Summarize this revenue leak analysis in one compelling sentence for a CEO dashboard:
+  const urgency = calculateUrgencyLevel(analysis);
+  const topIssue =
+    analysis.failedPaymentRecovery.severity === 'High'
+      ? 'failed payments'
+      : analysis.churnLeak.severity === 'High'
+      ? 'high churn'
+      : 'discount leaks';
 
-- Total recoverable: $${analysis.totalRecoverable.toFixed(2)}/year
-- Health score: ${analysis.executiveScore}/100
-- Top issue: ${analysis.failedPaymentRecovery.severity === 'High' ? 'Failed payments' : analysis.churnLeak.severity === 'High' ? 'High churn' : 'Discount leaks'}
-
-Make it actionable and urgent.`;
-
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4-turbo-preview',
-    messages: [{ role: 'system', content: prompt }],
-    max_tokens: 100,
-    temperature: 0.2,
-  });
-
-  return completion.choices[0].message.content || 'Revenue optimization analysis complete.';
+  return `You have ~$${analysis.totalRecoverable.toFixed(
+    0
+  )}/year in recoverable revenue with a health score of ${
+    analysis.executiveScore
+  }/100 — focus first on ${topIssue} (${urgency} priority).`;
 }
 
 // Generate specific recommendations for a leak category
@@ -89,26 +106,26 @@ export async function generateLeakRecommendations(
       ? (categoryData as any).totalRefunded
       : 0;
 
-  const prompt = `Generate 3 specific, actionable recommendations to fix this revenue leak:
-
-Category: ${category.replace('_', ' ').toUpperCase()}
-Impact: $${impactValue.toFixed(2)}/month
-Severity: ${categoryData.severity}
-
-Provide exactly 3 recommendations as a JSON array of strings.`;
-
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4-turbo-preview',
-    messages: [{ role: 'system', content: prompt }],
-    response_format: { type: 'json_object' },
-    temperature: 0.3,
-  });
-
-  try {
-    const result = JSON.parse(completion.choices[0].message.content!);
-    return result.recommendations || [];
-  } catch {
-    return [];
+  // Simple static recommendations for demo purposes
+  switch (category) {
+    case 'failed_payments':
+      return [
+        'Add at least one additional dunning email before cancelling overdue subscriptions.',
+        'Retry failed payments at different times of day to increase success rates.',
+        'Offer a self-service card update link in all failed payment emails.',
+      ];
+    case 'churn':
+      return [
+        'Introduce a 3-question exit survey for all cancellations.',
+        'Add an in-app prompt to schedule a call before high-value accounts churn.',
+        'Offer a pause plan instead of immediate cancellation.',
+      ];
+    default:
+      return [
+        'Review this leak category and decide on one small experiment to run this week.',
+        'Set a target metric (recovered MRR or reduced churn) for the next 30 days.',
+        'Review results in one month and double down on what worked.',
+      ];
   }
 }
 
@@ -139,56 +156,11 @@ export async function generateLeakInsights(
 
   const totalLeakMonthly = leaks.reduce((sum, leak) => sum + (leak.monthlyValue || 0), 0);
 
-  const leakSummary = leaks
-    .map((leak) => {
-      return `${leak.type} | ${leak.title} | ~£${leak.monthlyValue.toFixed(
-        0
-      )}/month | severity: ${leak.severity}`;
-    })
-    .join('\n');
-
-  const prompt = `
-You are a SaaS revenue expert. Based on this leak data, explain:
-1. What is causing the revenue loss
-2. What the founder should fix first
-3. A simple action they can take this week
-
-Keep it concise and actionable.
-
-Return your answer strictly as a JSON array of 3 to 5 short bullet points (strings, no numbering).
-
-Total monthly leak: ~£${totalLeakMonthly.toFixed(0)}
-
-LEAK DATA:
-${leakSummary}
-`;
-
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4-turbo-preview',
-    messages: [
-      {
-        role: 'system',
-        content: prompt,
-      },
-    ],
-    response_format: { type: 'json_object' },
-    temperature: 0.3,
-  });
-
-  try {
-    const raw = completion.choices[0].message.content || '[]';
-    const parsed = JSON.parse(raw);
-
-    if (Array.isArray(parsed)) {
-      return parsed.slice(0, 5);
-    }
-
-    if (Array.isArray(parsed.insights)) {
-      return parsed.insights.slice(0, 5);
-    }
-
-    return [];
-  } catch {
-    return [];
-  }
+  return [
+    `You are leaking approximately £${totalLeakMonthly.toFixed(
+      0
+    )} per month across ${leaks.length} categories.`,
+    'Start by fixing failed payments and high churn first — they typically have the fastest payback.',
+    'Ship one small improvement this week (e.g. better dunning emails or an exit survey) and measure recovered MRR.',
+  ];
 }

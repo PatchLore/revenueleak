@@ -1,45 +1,18 @@
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+/**
+ * Demo scan endpoint.
+ * Returns a hardcoded revenue leak result for UX testing.
+ */
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  // We ignore the actual scan ID and just return static demo data
+  await params; // keep signature compatible but unused
 
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name: string, value: string, options: Record<string, unknown>) {
-          cookieStore.set({ name, value, ...options });
-        },
-        remove(name: string, options: Record<string, unknown>) {
-          cookieStore.set({ name, value: '', ...options });
-        },
-      },
-    }
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { data: scan, error } = await supabase
-    .from('scans')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error || !scan || scan.user_id !== user.id) {
-    return NextResponse.json({ error: 'Scan not found' }, { status: 404 });
-  }
-
-  return NextResponse.json(scan);
+  return NextResponse.json({
+    leakAmount: '£3,240/month',
+    message: "You're losing £3,240 per month due to revenue leaks",
+    details: [
+      { type: 'unused coupon', amount: '£1,200' },
+      { type: 'failed payments', amount: '£2,040' },
+    ],
+  });
 }

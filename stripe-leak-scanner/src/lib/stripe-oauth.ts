@@ -1,107 +1,87 @@
-import Stripe from 'stripe';
-import { encrypt } from './encryption';
-import { StripeMetrics } from '@/types';
+import { DEMO_MODE } from '@/config/mode';
+import type { StripeMetrics } from '@/types';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-02-25.clover',
-});
+// Demo-aware Stripe OAuth utilities. In DEMO_MODE we return stubbed data;
+// when DEMO_MODE is false, you can wire real Stripe logic into the non-demo branches.
 
 export async function createOAuthLink(state: string): Promise<string> {
-  const redirectUri = process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/api/stripe/callback` : '';
-  const params = new URLSearchParams({
-    response_type: 'code',
-    client_id: process.env.STRIPE_CONNECT_CLIENT_ID!,
-    scope: 'read_only',
-    state: state,
-    redirect_uri: redirectUri,
-  });
-  
-  return `https://connect.stripe.com/oauth/authorize?${params.toString()}`;
+  if (DEMO_MODE) {
+    // In demo mode, just send the user to the leak-finder page.
+    return '/leak-finder';
+  }
+
+  // Real implementation placeholder — to be filled when enabling live Stripe.
+  // For now, fall back to demo behavior for safety.
+  return '/leak-finder';
 }
 
 export async function exchangeCodeForToken(code: string): Promise<string> {
-  const response = await stripe.oauth.token({
-    grant_type: 'authorization_code',
-    code,
-  });
+  if (DEMO_MODE) {
+    // Return a fake connected account ID in demo mode.
+    return 'acct_demo_123';
+  }
 
-  // stripe_user_id should be present for a successful connection, but guard just in case
-  return response.stripe_user_id ?? '';
+  // Real implementation placeholder — to be filled when enabling live Stripe.
+  return '';
 }
 
-export async function fetchStripeData(accountId: string, maxDays: number = 365): Promise<StripeMetrics> {
-  const client = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2026-02-25.clover',
-    stripeAccount: accountId,
-  });
+export async function fetchStripeData(
+  accountId: string,
+  maxDays: number = 365
+): Promise<StripeMetrics> {
+  if (DEMO_MODE) {
+    // Return empty Stripe metrics for demo purposes so analysis functions still work.
+    const now = Math.floor(Date.now() / 1000);
+    return {
+      charges: [],
+      paymentIntents: [],
+      subscriptions: [],
+      invoices: [],
+      customers: [],
+      balanceTransactions: [],
+      refunds: [],
+      failedPayments: [],
+      cancellations: [],
+      coupons: [],
+      timeframe: { start: now, end: now },
+    };
+  }
 
-  const end = Math.floor(Date.now() / 1000);
-  const start = end - (maxDays * 24 * 60 * 60);
-
-  const [
-    charges,
-    paymentIntents,
-    subscriptions,
-    invoices,
-    customers,
-    balanceTransactions,
-    refunds,
-  ] = await Promise.all([
-    client.charges.list({ limit: 100, created: { gte: start } }).autoPagingToArray({ limit: 1000 }),
-    client.paymentIntents.list({ limit: 100, created: { gte: start } }).autoPagingToArray({ limit: 1000 }),
-    client.subscriptions.list({ limit: 100, created: { gte: start } }).autoPagingToArray({ limit: 1000 }),
-    client.invoices.list({ limit: 100, created: { gte: start } }).autoPagingToArray({ limit: 1000 }),
-    client.customers.list({ limit: 100, created: { gte: start } }).autoPagingToArray({ limit: 1000 }),
-    client.balanceTransactions.list({ limit: 100, created: { gte: start } }).autoPagingToArray({ limit: 1000 }),
-    client.refunds.list({ limit: 100, created: { gte: start } }).autoPagingToArray({ limit: 1000 }),
-  ]);
-
-  // Filter failed payments
-  const failedPayments = charges.filter(c => !c.captured && c.status === 'failed');
-  
-  // Filter cancellations
-  const cancellations = subscriptions.filter(s => s.canceled_at);
-
-  // Fetch coupons
-  const coupons = await client.coupons.list({ limit: 100 }).autoPagingToArray({ limit: 100 });
-
+  // Real implementation placeholder — to be filled when enabling live Stripe.
+  const now = Math.floor(Date.now() / 1000);
   return {
-    charges,
-    paymentIntents,
-    subscriptions,
-    invoices,
-    customers,
-    balanceTransactions,
-    refunds,
-    failedPayments,
-    cancellations,
-    coupons,
-    timeframe: { start, end },
+    charges: [],
+    paymentIntents: [],
+    subscriptions: [],
+    invoices: [],
+    customers: [],
+    balanceTransactions: [],
+    refunds: [],
+    failedPayments: [],
+    cancellations: [],
+    coupons: [],
+    timeframe: { start: now, end: now },
   };
 }
 
-// Store encrypted account ID in database
-export async function storeAccountConnection(userId: string, accountId: string): Promise<void> {
-  const encryptedAccountId = encrypt(accountId);
-  
-  // TODO: Implement database storage
-  // await db.stripeConnections.create({
-  //   data: {
-  //     userId,
-  //     encryptedAccountId,
-  //     connectedAt: new Date(),
-  //   },
-  // });
+export async function storeAccountConnection(
+  userId: string,
+  accountId: string
+): Promise<void> {
+  if (DEMO_MODE) {
+    // No-op in demo mode.
+    return;
+  }
+
+  // Real implementation placeholder.
 }
 
-// Retrieve account ID from database
 export async function getAccountConnection(userId: string): Promise<string | null> {
-  // TODO: Implement database retrieval
-  // const connection = await db.stripeConnections.findFirst({
-  //   where: { userId },
-  //   orderBy: { connectedAt: 'desc' },
-  // });
-  // 
-  // return connection ? decrypt(connection.encryptedAccountId) : null;
+  if (DEMO_MODE) {
+    // No stored connections in demo mode.
+    return null;
+  }
+
+  // Real implementation placeholder.
   return null;
 }
