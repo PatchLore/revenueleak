@@ -2,10 +2,7 @@ import Stripe from 'stripe';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-02-25.clover',
-});
+import { DEMO_MODE } from '@/config/mode';
 
 const TIER_PRICE_IDS: Record<string, string | undefined> = {
   indie: process.env.STRIPE_PRICE_ID_INDIE,
@@ -13,7 +10,28 @@ const TIER_PRICE_IDS: Record<string, string | undefined> = {
 };
 
 export async function POST(req: Request) {
+  if (DEMO_MODE) {
+    const paymentLinkUrl = process.env.STRIPE_PAYMENT_LINK_URL;
+    if (!paymentLinkUrl) {
+      return NextResponse.json(
+        { success: false, error: 'Missing STRIPE_PAYMENT_LINK_URL. Set it in your Vercel environment variables.' },
+        { status: 500 }
+      );
+    }
+
+    // Demo mode: do not create a Stripe subscription session. Redirect to a preconfigured checkout link.
+    return NextResponse.json({
+      success: true,
+      url: paymentLinkUrl,
+      sessionId: 'demo',
+    });
+  }
+
   try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2026-02-25.clover',
+    });
+
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.SUPABASE_URL!,

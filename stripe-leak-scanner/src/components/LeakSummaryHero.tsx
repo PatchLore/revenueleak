@@ -31,11 +31,27 @@ export function LeakSummaryHero({
     .sort((a, b) => b.monthlyValue - a.monthlyValue)
     .slice(0, 3);
   const remainingLeaks = sortedLeaks.slice(3);
+  const isLocked = isProUser === false;
 
   const formatMoney = (value: number) =>
     `${currencySymbol}${value.toLocaleString('en-GB', {
       maximumFractionDigits: 0,
     })}`;
+
+  const formatAmount = (value: number) =>
+    value.toLocaleString('en-GB', { maximumFractionDigits: 0 });
+
+  const handleUnlockFullReport = () => {
+    // eslint-disable-next-line no-console
+    console.log('[LeakSummaryHero] Unlock Full Report – $19');
+    onUnlock?.();
+  };
+
+  const handleGetFixPlan = () => {
+    // eslint-disable-next-line no-console
+    console.log('[LeakSummaryHero] Get Fix Plan – $49');
+    window.location.href = '/contact?service=fix-sprint';
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black/95 px-4">
@@ -45,7 +61,7 @@ export function LeakSummaryHero({
         }`}
       >
         <div className="mb-6 text-xs uppercase tracking-[0.2em] text-white/40">
-          Stripe Revenue Leak Audit
+          Revenue Leak Scan
         </div>
 
         <h1 className="text-3xl md:text-4xl font-semibold text-white mb-4">
@@ -106,8 +122,10 @@ export function LeakSummaryHero({
           })}
         </div>
 
-        {/* Recommended actions per leak */}
-        <div className="mb-8 text-left">
+        <div className="relative">
+          <div className={isLocked ? 'blur-md pointer-events-none select-none' : ''}>
+            {/* Recommended actions per leak */}
+            <div className="mb-8 text-left">
           <h2 className="text-sm md:text-base font-semibold text-white mb-3">
             Recommended Actions
           </h2>
@@ -172,9 +190,7 @@ export function LeakSummaryHero({
         {remainingLeaks.length > 0 && (
           <div className="relative mb-8">
             <div
-              className={`rounded-2xl border border-white/10 bg-white/5 px-5 py-4 md:px-6 md:py-5 text-left overflow-hidden ${
-                isProUser ? '' : 'pointer-events-none'
-              }`}
+              className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 md:px-6 md:py-5 text-left overflow-hidden"
             >
               <div className="flex items-center justify-between mb-3">
                 <div>
@@ -215,17 +231,6 @@ export function LeakSummaryHero({
                 ))}
               </div>
 
-              {!isProUser && (
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center">
-                  <p className="text-xs uppercase tracking-[0.2em] text-white/40 mb-1">
-                    Pro feature
-                  </p>
-                  <p className="text-sm text-white/80 mb-1">Additional leaks hidden</p>
-                  <p className="text-[11px] text-white/50">
-                    Upgrade to see full breakdown and customer-level insights.
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -268,8 +273,37 @@ export function LeakSummaryHero({
           Unlock Full Recovery Plan
         </button>
 
-        <div className="mt-4 text-[11px] text-white/35">
-          No changes made to Stripe. Read-only financial analysis.
+            <div className="mt-4 text-[11px] text-white/35">
+              No changes made to Stripe. Read-only financial analysis.
+            </div>
+          </div>
+
+          {!isProUser && (
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-md flex flex-col items-center justify-center px-6 text-center">
+              <p className="text-xs uppercase tracking-[0.2em] text-white/40 mb-2">
+                Unlock Pro
+              </p>
+              <p className="text-sm md:text-base font-semibold text-white mb-6">
+                You're potentially losing £{formatAmount(totalLeakMonthly)}/month
+              </p>
+              <div className="flex flex-col gap-3 w-full max-w-xs">
+                <button
+                  type="button"
+                  onClick={handleUnlockFullReport}
+                  className="inline-flex items-center justify-center rounded-full bg-emerald-500 text-black px-5 py-3 text-sm font-semibold hover:bg-emerald-400 transition"
+                >
+                  Unlock Full Report – £19
+                </button>
+                <button
+                  type="button"
+                  onClick={handleGetFixPlan}
+                  className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/5 text-white px-5 py-3 text-sm font-semibold hover:bg-white/10 transition"
+                >
+                  Get Fix Plan – £49
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
