@@ -1,5 +1,3 @@
-import type Stripe from 'stripe';
-
 export type PlanSlug = 'free' | 'indie' | 'studio';
 
 export interface AppUser {
@@ -10,16 +8,18 @@ export interface AppUser {
 }
 
 export interface StripeMetrics {
-  charges: Stripe.Charge[];
-  paymentIntents: Stripe.PaymentIntent[];
-  subscriptions: Stripe.Subscription[];
-  invoices: Stripe.Invoice[];
-  customers: Stripe.Customer[];
-  balanceTransactions: Stripe.BalanceTransaction[];
-  refunds: Stripe.Refund[];
-  failedPayments: Stripe.Charge[];
-  cancellations: Stripe.Subscription[];
-  coupons: Stripe.Coupon[];
+  // Demo-mode build must not depend on the `stripe` package.
+  // These are intentionally loose so the app can compile without Stripe SDK types installed.
+  charges: any[];
+  paymentIntents: any[];
+  subscriptions: any[];
+  invoices: any[];
+  customers: any[];
+  balanceTransactions: any[];
+  refunds: any[];
+  failedPayments: any[];
+  cancellations: any[];
+  coupons: any[];
   timeframe: { start: number; end: number };
 }
 

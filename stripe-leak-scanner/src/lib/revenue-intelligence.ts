@@ -1,4 +1,3 @@
-import type Stripe from 'stripe';
 import type { RevenueIntelligence, StripeMetrics } from '@/types';
 import type { TierConfig } from './tiers';
 
@@ -8,7 +7,11 @@ function startOfMonthEpoch(date: Date): number {
   return Math.floor(new Date(date.getFullYear(), date.getMonth(), 1).getTime() / 1000);
 }
 
-function intervalToMonthly(amountCents: number, interval?: Stripe.Price.Recurring.Interval | null, intervalCount = 1): number {
+function intervalToMonthly(
+  amountCents: number,
+  interval?: string | null,
+  intervalCount = 1
+): number {
   const amount = amountCents / 100;
   if (!interval) return amount;
   if (interval === 'month') return amount / Math.max(intervalCount, 1);
@@ -18,8 +21,8 @@ function intervalToMonthly(amountCents: number, interval?: Stripe.Price.Recurrin
   return amount;
 }
 
-function getSubscriptionMonthlyAmount(subscription: Stripe.Subscription): number {
-  return subscription.items.data.reduce((sum, item) => {
+function getSubscriptionMonthlyAmount(subscription: any): number {
+  return subscription.items.data.reduce((sum: number, item: any) => {
     const price = item.price;
     const recurring = price?.recurring;
     const amount = price?.unit_amount ?? item.plan?.amount ?? 0;
@@ -42,7 +45,7 @@ function makePastMonths(count: number): Date[] {
   return months;
 }
 
-function customerEmailById(customers: Stripe.Customer[]): Map<string, string> {
+function customerEmailById(customers: any[]): Map<string, string> {
   const map = new Map<string, string>();
   customers.forEach((customer) => {
     map.set(customer.id, customer.email ?? 'Unknown customer');
@@ -166,7 +169,7 @@ export function computeRevenueIntelligence(
   const leakItems: RevenueIntelligence['revenueLeaks']['items'] = [];
 
   const pushLeak = (
-    customerId: string | Stripe.Customer | Stripe.DeletedCustomer | null,
+    customerId: string | any | null,
     category: RevenueIntelligence['revenueLeaks']['items'][number]['category'],
     amountAtRisk: number,
     eventEpoch?: number
@@ -192,11 +195,14 @@ export function computeRevenueIntelligence(
     pushLeak(sub.customer, 'Pending Cancellation', getSubscriptionMonthlyAmount(sub), sub.cancel_at ?? currentPeriodEnd ?? sub.created);
   });
 
-  const totalAtRisk = leakItems.reduce((sum, item) => sum + item.amountAtRisk, 0);
+  const totalAtRisk = leakItems.reduce(
+    (sum: number, item: { amountAtRisk: number }) => sum + item.amountAtRisk,
+    0
+  );
 
   const planStats = new Map<string, { planName: string; subscribers: number; mrrContribution: number; canceled: number }>();
-  data.subscriptions.forEach((sub) => {
-    sub.items.data.forEach((item) => {
+  data.subscriptions.forEach((sub: any) => {
+    sub.items.data.forEach((item: any) => {
       const planName = item.price.nickname || item.price.id || item.plan?.nickname || item.plan?.id || 'Unnamed plan';
       if (!planStats.has(planName)) {
         planStats.set(planName, { planName, subscribers: 0, mrrContribution: 0, canceled: 0 });
