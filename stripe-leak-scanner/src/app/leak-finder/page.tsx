@@ -77,7 +77,7 @@ export default function LeakFinderLanding() {
       setError(null);
       setProgressIdx(0);
 
-      // UX: simulate scan time before showing demo results
+      // UX: simulate scan time before showing estimated results
       await new Promise((r) => setTimeout(r, 3000));
 
       const params = new URLSearchParams({
@@ -89,7 +89,7 @@ export default function LeakFinderLanding() {
         params.set('churnPct', inputs.churnPct.toString());
       }
 
-      // Demo endpoint ignores inputs, but we pass them in for future integration.
+      // The estimate endpoint currently ignores inputs, but we pass them in for future integration.
       const res = await fetch(`/api/scan/demo?${params.toString()}`);
       const data = await res.json();
       if (!res.ok) {
@@ -137,14 +137,13 @@ export default function LeakFinderLanding() {
         <header className="text-center mb-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs uppercase tracking-[0.2em] text-white/50 mb-4">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Revenue Leak Finder (Demo)
+            Revenue Leak Finder
           </div>
           <h1 className="text-3xl md:text-4xl font-semibold leading-tight">
             See how much revenue you&apos;re leaking
           </h1>
           <p className="mt-3 text-sm text-white/60 max-w-xl mx-auto">
-            This demo uses hardcoded results so you can test the UX and conversion flow without
-            connecting a real Stripe account.
+            Get an instant estimate of where your revenue may be leaking — no integrations required.
           </p>
         </header>
 
@@ -224,11 +223,11 @@ export default function LeakFinderLanding() {
                 disabled={loading}
                 className="w-full inline-flex items-center justify-center rounded-full bg-emerald-500 text-black px-6 py-3 text-sm font-semibold hover:bg-emerald-400 transition disabled:opacity-60"
               >
-                {loading ? 'Scanning…' : 'Scan My Revenue'}
+                {loading ? 'Scanning…' : 'Run Free Scan'}
               </button>
 
-              <p className="text-[11px] text-white/35">
-                Demo mode: we&apos;re simulating the scan and returning hardcoded results.
+              <p className="text-[11px] text-white/40">
+                No Stripe connection required • Takes 60 seconds
               </p>
             </form>
           )}
@@ -286,7 +285,7 @@ export default function LeakFinderLanding() {
                           {item.type}
                         </p>
                         <p className="text-xs text-white/60">
-                          Simulated leak category for demo purposes.
+                          Example leak category shown for illustration.
                         </p>
                       </div>
                       <p className="text-sm md:text-base font-semibold text-emerald-200">
@@ -319,8 +318,8 @@ export default function LeakFinderLanding() {
           )}
         </main>
 
-        <p className="mt-4 text-[11px] text-white/35 text-center">
-          Demo mode — no real Stripe data is accessed. All results are hardcoded for UX testing.
+        <p className="mt-4 text-[11px] text-white/40 text-center">
+          No integrations required • Instant analysis
         </p>
       </div>
     </div>

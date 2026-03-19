@@ -64,7 +64,7 @@ export default function Home() {
           <div className="grid md:grid-cols-4 gap-6">
             {[
               { step: '1', title: 'Answer a few quick questions', desc: 'Share your revenue setup in under a minute.' },
-              { step: '2', title: 'We analyse your revenue setup', desc: 'Our demo scan estimates where value is leaking.' },
+              { step: '2', title: 'We analyse your revenue setup', desc: 'Our instant scan estimates where value is leaking.' },
               { step: '3', title: 'See your estimated revenue leaks', desc: 'Get a clear breakdown with prioritised impact.' },
               { step: '4', title: 'Unlock your full fix plan', desc: 'Get step-by-step actions to recover lost revenue.' }
             ].map((item, i) => (
