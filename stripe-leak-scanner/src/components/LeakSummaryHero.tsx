@@ -273,9 +273,32 @@ export function LeakSummaryHero({
           Unlock Full Recovery Plan
         </button>
 
-            <div className="mt-4 text-[11px] text-white/35">
-              No changes made to Stripe. Read-only financial analysis.
+        <div className="mt-4 text-[11px] text-white/35">
+          No changes made to Stripe. Read-only financial analysis.
+        </div>
+
+        <div className="mt-10 pt-6 border-t border-white/10 text-left">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-white/40 mb-1">
+                Need more users, not just fixes?
+              </p>
+              <p className="text-sm text-white/70 max-w-xs">
+                Get your SaaS in front of thousands of potential users with our done-for-you launch
+                concierge.
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = '/launch-concierge';
+              }}
+              className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white text-black px-6 py-2.5 text-xs md:text-sm font-semibold hover:bg-white/90 transition"
+            >
+              Launch Your Product →
+            </button>
+          </div>
+        </div>
           </div>
 
           {!isProUser && (
