@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   });
 }
 
-export async function GET(req: Request) {
+export async function GET() {
   // Optional: allow previewing the payment link URL.
   const url = process.env.STRIPE_PAYMENT_LINK_URL;
   if (!url) {

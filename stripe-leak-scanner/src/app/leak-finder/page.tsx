@@ -90,7 +90,7 @@ export default function LeakFinderLanding() {
       }
 
       // The estimate endpoint currently ignores inputs, but we pass them in for future integration.
-      const res = await fetch(`/api/scan/demo?${params.toString()}`);
+      const res = await fetch(`/api/scan/demo-result?${params.toString()}`);
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || 'Failed to run scan');

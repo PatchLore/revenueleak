@@ -5,7 +5,7 @@ import { decrypt } from '@/lib/encryption';
 import { fetchStripeData } from '@/lib/stripe-oauth';
 import { analyzeRevenueLeaks, StripeData } from '@/lib/leakEngine';
 
-export async function POST(_req: Request) {
+export async function POST() {
   try {
     const cookieStore = await cookies();
     const supabase = createServerClient(
@@ -13,14 +13,19 @@ export async function POST(_req: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
+          getAll() {
+            return cookieStore.getAll();
           },
-          set(name: string, value: string, options: Record<string, unknown>) {
-            cookieStore.set({ name, value, ...options });
-          },
-          remove(name: string, options: Record<string, unknown>) {
-            cookieStore.set({ name, value: '', ...options });
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              );
+            } catch {
+              // The `setAll` method was called from a Server Component.
+              // This can be ignored if you have middleware refreshing
+              // user sessions.
+            }
           },
         },
       }

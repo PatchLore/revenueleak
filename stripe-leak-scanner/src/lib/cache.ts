@@ -1,10 +1,9 @@
 import type { RevenueIntelligence, StripeMetrics } from '@/types';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 
-// Supabase client from createServerClient (SSR) - minimal type for cache operations
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getCachedMetrics(
-  supabase: any,
+  supabase: SupabaseClient,
   userId: string,
   stripeAccountId: string
 ): Promise<{ metrics: RevenueIntelligence; hash: string } | null> {
@@ -24,9 +23,8 @@ export async function getCachedMetrics(
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function setCachedMetrics(
-  supabase: any,
+  supabase: SupabaseClient,
   userId: string,
   stripeAccountId: string,
   metrics: RevenueIntelligence,

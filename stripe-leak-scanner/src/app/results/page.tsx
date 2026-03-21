@@ -1,8 +1,9 @@
-'use client';
+ 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import type { LeakReport, LeakSeverity } from '@/lib/leakEngine';
 import { LeakSummaryHero } from '@/components/LeakSummaryHero';
+import { useCheckout } from '@/hooks/useCheckout';
 
 type ScanDemoResponse = {
   leakAmount: string;
@@ -24,15 +25,29 @@ function getSeverity(value: number): LeakSeverity {
 
 export default function ResultsPage() {
   const [unlocked, setUnlocked] = useState(false);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [scan, setScan] = useState<ScanDemoResponse | null>(null);
+  const {
+    loading: checkoutLoading,
+    error: checkoutError,
+    initiateCheckout,
+    verifyPurchase,
+  } = useCheckout();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    setUnlocked(params.get('unlocked') === 'true');
-  }, []);
+    const sessionId = params.get('session_id');
+    const unlockedParam = params.get('unlocked') === 'true';
+
+    async function verify() {
+      if (!sessionId || !unlockedParam) return;
+      const res = await verifyPurchase(sessionId);
+      setUnlocked(res.paid);
+    }
+
+    void verify();
+  }, [verifyPurchase]);
 
   useEffect(() => {
     let cancelled = false;
@@ -42,9 +57,12 @@ export default function ResultsPage() {
         setLoading(true);
         setError(null);
         // In demo mode the scan endpoint returns static/hardcoded data.
-        const res = await fetch('/api/scan/demo');
+        const res = await fetch('/api/scan/demo-result');
         const json = (await res.json()) as ScanDemoResponse;
-        if (!res.ok) throw new Error(json && (json as any).error ? (json as any).error : 'Failed to load results');
+        if (!res.ok) {
+          const errorData = json as unknown as { error?: string };
+          throw new Error(errorData.error || 'Failed to load results');
+        }
         if (!cancelled) setScan(json);
       } catch (e) {
         if (!cancelled) {
@@ -100,19 +118,16 @@ export default function ResultsPage() {
   }, [scan]);
 
   const onUnlock = async () => {
-    try {
-      const res = await fetch('/api/payment/create-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ returnUrl: '/results?unlocked=true' }),
-      });
-      const json = await res.json();
-      if (!res.ok || !json?.url) throw new Error(json?.error || 'Failed to create checkout');
-      window.location.href = json.url as string;
-    } catch (e) {
+    const priceId = process.env.STRIPE_PRICE_ID;
+    if (!priceId) {
+      // eslint-disable-next-line no-console
+      console.error('[ResultsPage] STRIPE_PRICE_ID is not set');
       // eslint-disable-next-line no-alert
-      alert(e instanceof Error ? e.message : 'Failed to start payment');
+      alert('Payment is not configured yet. Please try again later.');
+      return;
     }
+
+    await initiateCheckout(priceId);
   };
 
   if (loading || !report) {
@@ -146,12 +161,17 @@ export default function ResultsPage() {
   }
 
   return (
-    <LeakSummaryHero
-      report={report}
-      currencySymbol="£"
-      isProUser={unlocked}
-      onUnlock={onUnlock}
-    />
+    <>
+      <LeakSummaryHero
+        report={report}
+        currencySymbol="£"
+        isProUser={unlocked}
+        onUnlock={checkoutLoading ? undefined : onUnlock}
+      />
+      {checkoutError && (
+        <p className="mt-4 text-center text-xs text-red-300">{checkoutError}</p>
+      )}
+    </>
   );
 }
 

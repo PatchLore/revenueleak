@@ -7,19 +7,96 @@ export interface AppUser {
   subscription_status?: string | null;
 }
 
+export interface StripeSubscriptionItem {
+  id: string;
+  price?: {
+    id: string;
+    nickname?: string | null;
+    unit_amount: number;
+    recurring?: {
+      interval: 'day' | 'week' | 'month' | 'year';
+      interval_count: number;
+    };
+  };
+  plan?: {
+    id: string;
+    nickname?: string | null;
+    amount: number;
+    interval: 'day' | 'week' | 'month' | 'year';
+    interval_count: number;
+  };
+}
+
+export interface StripeSubscription {
+  id: string;
+  status: 'active' | 'trialing' | 'past_due' | 'canceled' | 'unpaid' | 'incomplete' | 'incomplete_expired' | 'paused';
+  items: {
+    data: StripeSubscriptionItem[];
+  };
+  created: number;
+  canceled_at?: number | null;
+  cancel_at?: number | null;
+  trial_start?: number | null;
+  trial_end?: number | null;
+  cancel_at_period_end?: boolean;
+  current_period_end?: number;
+  customer: string | { id: string };
+}
+
+export interface StripeInvoice {
+  id: string;
+  currency: string;
+  subtotal: number;
+  total: number;
+  status?: 'draft' | 'open' | 'paid' | 'uncollectible' | 'void' | null;
+  attempt_count?: number;
+  amount_remaining?: number;
+  amount_due?: number;
+  created: number;
+  customer: string | { id: string };
+  discount?: unknown;
+  discounts?: unknown[];
+}
+
+export interface StripeCharge {
+  id: string;
+  amount: number;
+  status: 'succeeded' | 'pending' | 'failed';
+  payment_intent?: string | {
+    id: string;
+    attempts_count?: number;
+  } | null;
+}
+
+export interface StripeCustomer {
+  id: string;
+  email: string | null;
+}
+
+export interface StripeRefund {
+  id: string;
+  amount: number;
+  created?: number;
+}
+
+export interface StripeCoupon {
+  id: string;
+  name?: string;
+  percent_off?: number;
+  amount_off?: number;
+}
+
 export interface StripeMetrics {
-  // Demo-mode build must not depend on the `stripe` package.
-  // These are intentionally loose so the app can compile without Stripe SDK types installed.
-  charges: any[];
-  paymentIntents: any[];
-  subscriptions: any[];
-  invoices: any[];
-  customers: any[];
-  balanceTransactions: any[];
-  refunds: any[];
-  failedPayments: any[];
-  cancellations: any[];
-  coupons: any[];
+  charges: StripeCharge[];
+  paymentIntents: unknown[];
+  subscriptions: StripeSubscription[];
+  invoices: StripeInvoice[];
+  customers: StripeCustomer[];
+  balanceTransactions: unknown[];
+  refunds: StripeRefund[];
+  failedPayments: StripeCharge[];
+  cancellations: StripeSubscription[];
+  coupons: StripeCoupon[];
   timeframe: { start: number; end: number };
 }
 

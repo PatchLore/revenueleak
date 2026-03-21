@@ -33,7 +33,7 @@ export default function Home() {
         {/* PAIN */}
         <div className="mb-16">
           <div className="bg-gray-900/40 border border-gray-800 rounded-2xl p-6 md:p-10">
-            <h2 className="text-3xl font-bold mb-6">You're Making Money… But Still Losing It</h2>
+            <h2 className="text-3xl font-bold mb-6">You&apos;re Making Money… But Still Losing It</h2>
             <ul className="grid sm:grid-cols-2 gap-x-8 gap-y-4 text-gray-300">
               <li className="flex items-start gap-3">
                 <span className="text-emerald-400 font-bold">•</span>

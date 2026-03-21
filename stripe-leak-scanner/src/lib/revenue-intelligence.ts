@@ -1,4 +1,4 @@
-import type { RevenueIntelligence, StripeMetrics } from '@/types';
+import type { RevenueIntelligence, StripeMetrics, StripeSubscription, StripeCustomer } from '@/types';
 import type { TierConfig } from './tiers';
 
 const DEFAULT_MONTH_WINDOW = 6;
@@ -21,8 +21,8 @@ function intervalToMonthly(
   return amount;
 }
 
-function getSubscriptionMonthlyAmount(subscription: any): number {
-  return subscription.items.data.reduce((sum: number, item: any) => {
+function getSubscriptionMonthlyAmount(subscription: StripeSubscription): number {
+  return subscription.items.data.reduce((sum: number, item) => {
     const price = item.price;
     const recurring = price?.recurring;
     const amount = price?.unit_amount ?? item.plan?.amount ?? 0;
@@ -45,7 +45,7 @@ function makePastMonths(count: number): Date[] {
   return months;
 }
 
-function customerEmailById(customers: any[]): Map<string, string> {
+function customerEmailById(customers: StripeCustomer[]): Map<string, string> {
   const map = new Map<string, string>();
   customers.forEach((customer) => {
     map.set(customer.id, customer.email ?? 'Unknown customer');
@@ -161,7 +161,7 @@ export function computeRevenueIntelligence(
   const emailMap = customerEmailById(data.customers);
   const pastDueSubs = data.subscriptions.filter((sub) => sub.status === 'past_due');
   const pendingCancelSubs = data.subscriptions.filter((sub) => sub.cancel_at_period_end);
-  const failedInvoices = data.invoices.filter((invoice) => invoice.status === 'open' && invoice.attempt_count > 0);
+  const failedInvoices = data.invoices.filter((invoice) => invoice.status === 'open' && (invoice.attempt_count ?? 0) > 0);
   const trialNotConverted = data.subscriptions.filter(
     (sub) => (sub.trial_end ?? 0) < nowEpoch && sub.status !== 'active' && !sub.canceled_at
   );
@@ -169,7 +169,7 @@ export function computeRevenueIntelligence(
   const leakItems: RevenueIntelligence['revenueLeaks']['items'] = [];
 
   const pushLeak = (
-    customerId: string | any | null,
+    customerId: string | { id: string } | null,
     category: RevenueIntelligence['revenueLeaks']['items'][number]['category'],
     amountAtRisk: number,
     eventEpoch?: number
@@ -181,7 +181,7 @@ export function computeRevenueIntelligence(
   };
 
   pastDueSubs.forEach((sub) => {
-    const currentPeriodEnd = (sub as any).current_period_end as number | undefined;
+    const currentPeriodEnd = sub.current_period_end;
     pushLeak(sub.customer, 'Past Due', getSubscriptionMonthlyAmount(sub), currentPeriodEnd ?? sub.created);
   });
   failedInvoices.slice(0, 50).forEach((invoice) => {
@@ -191,8 +191,8 @@ export function computeRevenueIntelligence(
     pushLeak(sub.customer, 'Trial Not Converted', getSubscriptionMonthlyAmount(sub), sub.trial_end ?? sub.created);
   });
   pendingCancelSubs.forEach((sub) => {
-    const currentPeriodEnd = (sub as any).current_period_end as number | undefined;
-    pushLeak(sub.customer, 'Pending Cancellation', getSubscriptionMonthlyAmount(sub), sub.cancel_at ?? currentPeriodEnd ?? sub.created);
+    const currentPeriodEnd = sub.current_period_end;
+    pushLeak(sub.customer, 'Pending Cancellation', getSubscriptionMonthlyAmount(sub), sub.canceled_at ?? currentPeriodEnd ?? sub.created);
   });
 
   const totalAtRisk = leakItems.reduce(
@@ -201,16 +201,16 @@ export function computeRevenueIntelligence(
   );
 
   const planStats = new Map<string, { planName: string; subscribers: number; mrrContribution: number; canceled: number }>();
-  data.subscriptions.forEach((sub: any) => {
-    sub.items.data.forEach((item: any) => {
-      const planName = item.price.nickname || item.price.id || item.plan?.nickname || item.plan?.id || 'Unnamed plan';
+  data.subscriptions.forEach((sub) => {
+    sub.items.data.forEach((item) => {
+      const planName = item.price?.nickname || item.price?.id || item.plan?.nickname || item.plan?.id || 'Unnamed plan';
       if (!planStats.has(planName)) {
         planStats.set(planName, { planName, subscribers: 0, mrrContribution: 0, canceled: 0 });
       }
       const current = planStats.get(planName)!;
       current.subscribers += sub.status === 'active' ? 1 : 0;
       current.mrrContribution += getSubscriptionMonthlyAmount(sub);
-      current.canceled += sub.canceled_at && (sub.canceled_at >= startCurrentMonthEpoch) ? 1 : 0;
+      current.canceled += (sub.canceled_at && (sub.canceled_at >= startCurrentMonthEpoch)) ? 1 : 0;
     });
   });
 

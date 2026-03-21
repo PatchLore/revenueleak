@@ -1,16 +1,11 @@
 import { NextResponse } from 'next/server';
 import { DEMO_MODE } from '@/config/mode';
 
-const TIER_PRICE_IDS: Record<string, string | undefined> = {
-  indie: process.env.STRIPE_PRICE_ID_INDIE,
-  studio: process.env.STRIPE_PRICE_ID_STUDIO,
-};
-
 /**
  * Demo-only subscription checkout.
  * This route must not import the `stripe` SDK so Next.js can build without the `stripe` package installed.
  */
-export async function POST(req: Request) {
+export async function POST() {
   if (DEMO_MODE) {
     const paymentLinkUrl = process.env.STRIPE_PAYMENT_LINK_URL;
     if (!paymentLinkUrl) {
@@ -45,9 +40,7 @@ export async function POST(req: Request) {
   });
 }
 
-export async function GET(req: Request) {
-  // Kept for completeness; same behavior as POST.
-  void req;
+export async function GET() {
   const paymentLinkUrl = process.env.STRIPE_PAYMENT_LINK_URL;
   if (!paymentLinkUrl) {
     return NextResponse.json(

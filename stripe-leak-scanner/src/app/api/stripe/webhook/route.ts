@@ -9,7 +9,7 @@ export async function GET() {
 }
 
 // In demo mode, accept all webhook POSTs and do nothing.
-export async function POST(_req: Request) {
+export async function POST() {
   return NextResponse.json({
     received: true,
     mode: 'demo',

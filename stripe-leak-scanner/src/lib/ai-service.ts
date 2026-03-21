@@ -95,17 +95,6 @@ export async function generateLeakRecommendations(
 
   if (!categoryData) return [];
 
-  const impactValue =
-    'recoverableAmount' in categoryData
-      ? categoryData.recoverableAmount
-      : 'potentialSavings' in categoryData
-      ? categoryData.potentialSavings
-      : 'totalDiscounted' in categoryData
-      ? (categoryData as any).totalDiscounted
-      : 'totalRefunded' in categoryData
-      ? (categoryData as any).totalRefunded
-      : 0;
-
   // Simple static recommendations for demo purposes
   switch (category) {
     case 'failed_payments':

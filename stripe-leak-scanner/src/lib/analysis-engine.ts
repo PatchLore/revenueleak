@@ -24,7 +24,7 @@ export function analyzeRevenueLeaks(data: StripeMetrics): LeakAnalysis {
   const potentialSavings = revenueLost * 0.10; // 10% retention improvement
   
   // 3. Discount Leak
-  const discountedInvoices = data.invoices.filter(i => (i as any).discount || (i as any).discounts);
+  const discountedInvoices = data.invoices.filter(i => i.discount || i.discounts);
   const totalDiscounted = discountedInvoices.reduce((sum, i) => {
     const subtotal = i.subtotal || 0;
     const total = i.total || 0;
@@ -57,7 +57,7 @@ export function analyzeRevenueLeaks(data: StripeMetrics): LeakAnalysis {
   // 5. Dunning Efficiency
   const failedCharges = data.charges.filter(c => c.status === 'failed');
   const avgRetries = failedCharges.reduce((sum, c) => {
-    const paymentIntent = c.payment_intent as any;
+    const paymentIntent = typeof c.payment_intent === 'string' ? null : c.payment_intent;
     return sum + (paymentIntent?.attempts_count || 1);
   }, 0) / (failedCharges.length || 1);
   

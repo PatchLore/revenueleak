@@ -307,7 +307,7 @@ export function LeakSummaryHero({
                 Unlock Pro
               </p>
               <p className="text-sm md:text-base font-semibold text-white mb-6">
-                You're potentially losing £{formatAmount(totalLeakMonthly)}/month
+                You&apos;re potentially losing £{formatAmount(totalLeakMonthly)}/month
               </p>
               <div className="flex flex-col gap-3 w-full max-w-xs">
                 <button

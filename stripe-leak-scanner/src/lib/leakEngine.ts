@@ -1,3 +1,5 @@
+import type { StripeCustomer, StripeSubscription, StripeInvoice, StripeCharge, StripeRefund } from '@/types';
+
 export type LeakType = 'failed_payments' | 'underpriced_customers' | 'churn_risk' | 'refunds';
 
 export type LeakSeverity = 'low' | 'medium' | 'high';
@@ -14,13 +16,11 @@ export type LeakReport = {
 };
 
 export type StripeData = {
-  // Demo-mode build must not depend on the `stripe` package.
-  // Shapes are intentionally loose; the demo analyzer uses a small subset of fields.
-  customers: any[];
-  subscriptions: any[];
-  invoices: any[];
-  charges: any[];
-  refunds: any[];
+  customers: StripeCustomer[];
+  subscriptions: StripeSubscription[];
+  invoices: StripeInvoice[];
+  charges: StripeCharge[];
+  refunds: StripeRefund[];
 };
 
 const SECONDS_IN_DAY = 24 * 60 * 60;
@@ -68,7 +68,7 @@ export function analyzeRevenueLeaks(data: StripeData): LeakReport {
     (sub) => sub.status === 'active' || sub.status === 'trialing'
   );
 
-  const getUnitAmount = (sub: any): number => {
+  const getUnitAmount = (sub: StripeSubscription): number => {
     const item = sub.items.data[0];
     const amount =
       item?.price?.unit_amount ??
